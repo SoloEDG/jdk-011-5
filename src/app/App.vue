@@ -28,6 +28,10 @@ import {
 import { createWorkspace, commandRouter } from "./workspace";
 const state = createWorkspace();
 const cmd = commandRouter(state);
+if (import.meta.env.DEV) {
+  (window as any).__state = state;
+  (window as any).__cmd = cmd;
+}
 const stats = computed(() => summarize(state.doc));
 const viewport = ref<InstanceType<typeof WorldViewport>>();
 const help = ref(false);
@@ -142,7 +146,7 @@ function fullscreen() {
             <p>
               单击放置或拆除 · 拖动旋转视角<br />右键拖动平移 · 滚轮缩放<br />R
               选择两个角点 · Esc 取消选择<br />Tab 切换行走 · WASD 移动 ·
-              空格跳跃
+              空格跳跃<br />行走时点击方块，自动规划路线前往
             </p>
             <button class="soft" @click="help = false">开始建造</button>
           </div>
@@ -171,7 +175,11 @@ function fullscreen() {
           @remove="cmd.region(true)"
           @clear="cmd.clear()"
           @start="cmd.tool('select')"
-        /><PlayerPanel :state="state" @toggle="cmd.toggle()" /><ArchivePanel
+        /><PlayerPanel
+          :state="state"
+          @toggle="cmd.toggle()"
+          @cancel-nav="cmd.navCancel()"
+        /><ArchivePanel
           :state="state"
           @save="save(state)"
           @load="load(state)"

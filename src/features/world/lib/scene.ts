@@ -89,6 +89,14 @@ export function mountScene(
   head.position.y = 1.4;
   avatar.add(body, head);
   scene.add(avatar);
+  const goalMark = new THREE.Mesh(
+    new THREE.BoxGeometry(1.04, 1.04, 1.04),
+    new THREE.MeshBasicMaterial({ color: "#6d9c58", wireframe: true }),
+  );
+  goalMark.visible = false;
+  scene.add(goalMark);
+  let pathLine: THREE.Line | null = null,
+    pathV = -1;
   const ray = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
   let hit: SceneHit | null = null;
@@ -121,8 +129,7 @@ export function mountScene(
     if (
       e.button === 0 &&
       Math.hypot(e.clientX - down.x, e.clientY - down.y) < 5 &&
-      hit &&
-      state.mode === "build"
+      hit
     )
       onHit(hit);
   };
@@ -167,6 +174,47 @@ export function mountScene(
         Math.abs(a.z - b.z) + 1,
       );
     } else region.visible = false;
+    const nav = state.nav;
+    if (nav && nav.path.length && nav.status === "following") {
+      if (nav.v !== pathV) {
+        pathV = nav.v;
+        if (pathLine) {
+          scene.remove(pathLine);
+          pathLine.geometry.dispose();
+          (pathLine.material as THREE.Material).dispose();
+        }
+        const pts = [
+          new THREE.Vector3(
+            state.doc.player.x,
+            state.doc.player.y + 0.25,
+            state.doc.player.z,
+          ),
+          ...nav.path
+            .slice(nav.cursor)
+            .map((c) => new THREE.Vector3(c.x + 0.5, c.y + 0.25, c.z + 0.5)),
+        ];
+        pathLine = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(pts),
+          new THREE.LineBasicMaterial({ color: "#6d9c58" }),
+        );
+        scene.add(pathLine);
+      }
+      goalMark.visible = true;
+      goalMark.position.set(
+        nav.goal.x + 0.5,
+        nav.goal.y + 0.5,
+        nav.goal.z + 0.5,
+      );
+    } else {
+      if (pathLine) {
+        scene.remove(pathLine);
+        pathLine.geometry.dispose();
+        (pathLine.material as THREE.Material).dispose();
+        pathLine = null;
+      }
+      pathV = -1;
+      goalMark.visible = false;
+    }
     controls.update();
     renderer.render(scene, camera);
   }
@@ -181,6 +229,10 @@ export function mountScene(
       resize.disconnect();
       controls.dispose();
       disposeGroup(blocks);
+      if (pathLine) {
+        pathLine.geometry.dispose();
+        (pathLine.material as THREE.Material).dispose();
+      }
       renderer.dispose();
       renderer.domElement.remove();
     },

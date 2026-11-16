@@ -4,6 +4,7 @@ import type { SceneHit } from "../shared/commands";
 import { createWorld, editCells } from "../features/world";
 import { pickCorner, regionCells, clearRegion } from "../features/selection";
 import { chooseMaterial, selectSlot } from "../features/inventory";
+import { setNavGoal, cancelNavigation } from "../features/navigate";
 export function createWorkspace() {
   return reactive<Workspace>({
     doc: createWorld(),
@@ -15,6 +16,7 @@ export function createWorkspace() {
     dirty: false,
     mode: "build",
     savedAt: null,
+    nav: null,
   });
 }
 export function commandRouter(s: Workspace) {
@@ -27,6 +29,10 @@ export function commandRouter(s: Workspace) {
       chooseMaterial(s, id);
     },
     hit(h: SceneHit) {
+      if (s.mode === "walk") {
+        setNavGoal(s, h);
+        return;
+      }
       if (s.tool === "select") pickCorner(s, h.cell);
       else
         s.message = editCells(
@@ -34,6 +40,9 @@ export function commandRouter(s: Workspace) {
           [s.tool === "place" ? h.adjacent : h.cell],
           s.tool === "remove",
         ).message;
+    },
+    navCancel() {
+      cancelNavigation(s);
     },
     region(remove = false) {
       if (s.region)
@@ -57,7 +66,10 @@ export function commandRouter(s: Workspace) {
       if (e.code === "KeyB") s.tool = "place";
       if (e.code === "KeyE") s.tool = "remove";
       if (e.code === "KeyR") s.tool = "select";
-      if (e.code === "Escape") clearRegion(s);
+      if (e.code === "Escape") {
+        if (s.nav) cancelNavigation(s);
+        else clearRegion(s);
+      }
       if (e.code === "Tab") {
         e.preventDefault();
         s.mode = s.mode === "build" ? "walk" : "build";

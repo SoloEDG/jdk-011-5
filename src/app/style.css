@@ -675,6 +675,32 @@ h1 span {
   color: #9ba68e;
   margin-top: 5px;
 }
+.nav-box {
+  margin-top: 12px;
+  border: 1px solid #e7e9df;
+  background: #f6f7ef;
+  border-radius: 7px;
+  padding: 10px 11px;
+}
+.nav-goal {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7d8b6e;
+  margin-bottom: 6px;
+}
+.nav-goal b {
+  font-size: 10px;
+  font-weight: 500;
+}
+.nav-box > small {
+  display: block;
+  font-size: 9px;
+  line-height: 1.7;
+}
+.nav-box .soft.full {
+  margin-top: 9px;
+}
 .panel > .small {
   margin-bottom: 0;
   margin-top: 10px;

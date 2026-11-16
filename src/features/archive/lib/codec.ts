@@ -33,5 +33,21 @@ export function decode(raw: string): WorldDocument {
     throw Error("角色坐标无效");
   if (!Number.isInteger(d.revision) || d.revision < 0)
     throw Error("世界版本无效");
+  if (d.nav !== undefined && d.nav !== null) {
+    const n = d.nav;
+    if (
+      !n.goal ||
+      ![n.goal.x, n.goal.y, n.goal.z].every(Number.isInteger) ||
+      !inside(n.goal) ||
+      !Array.isArray(n.confirmed) ||
+      n.confirmed.length > 512 ||
+      !n.confirmed.every(
+        (c: any) =>
+          [c?.x, c?.y, c?.z].every(Number.isInteger) && inside(c),
+      )
+    )
+      throw Error("导航数据无效");
+  }
+  d.nav ??= null;
   return d;
 }

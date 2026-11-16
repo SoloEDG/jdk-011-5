@@ -1,6 +1,7 @@
 import type { Workspace, WorldDocument } from "../../../shared/document";
 import { writeWorld, readWorld, downloadWorld } from "../lib/storage";
 import { decode } from "../lib/codec";
+import { resumeNavigation } from "../../navigate";
 function install(s: Workspace, doc: WorldDocument) {
   const revision = s.doc.revision + 1;
   s.doc = doc;
@@ -8,7 +9,10 @@ function install(s: Workspace, doc: WorldDocument) {
   s.dirty = false;
   s.mode = "build";
   s.savedAt = null;
+  s.nav = null;
   s.message = "世界已载入";
+  // 存档里若有未完成的带路：按当前地形重新判断路线
+  if (s.doc.nav?.goal) resumeNavigation(s);
 }
 export function save(s: Workspace) {
   try {

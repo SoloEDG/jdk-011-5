@@ -4,25 +4,34 @@ export interface Motion {
   vertical: number;
   grounded: boolean;
 }
+export interface Intent {
+  dx: number;
+  dz: number;
+  jump: boolean;
+}
 export function stepPlayer(
   s: Workspace,
-  keys: Set<string>,
+  intent: Intent,
   motion: Motion,
   dt: number,
 ) {
   if (s.mode !== "walk") return;
   const p = s.doc.player;
   const speed = 4 * dt;
-  let dx = (Number(keys.has("KeyD")) - Number(keys.has("KeyA"))) * speed,
-    dz = (Number(keys.has("KeyS")) - Number(keys.has("KeyW"))) * speed;
-  if (dx && dz) {
-    dx /= Math.SQRT2;
-    dz /= Math.SQRT2;
+  let dx = intent.dx,
+    dz = intent.dz;
+  const len = Math.hypot(dx, dz);
+  if (len > 1) {
+    dx /= len;
+    dz /= len;
   }
+  dx *= speed;
+  dz *= speed;
   for (const [axis, amount] of [
     ["x", dx],
     ["z", dz],
   ] as const) {
+    if (!amount) continue;
     const next = { ...p, [axis]: p[axis] + amount };
     if (
       Math.abs(next.x) < 15 &&
@@ -31,7 +40,7 @@ export function stepPlayer(
     )
       p[axis] = next[axis];
   }
-  if (keys.has("Space") && motion.grounded) {
+  if (intent.jump && motion.grounded) {
     motion.vertical = 6;
     motion.grounded = false;
   }
